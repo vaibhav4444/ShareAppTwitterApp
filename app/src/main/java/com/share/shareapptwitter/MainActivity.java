@@ -7,6 +7,7 @@ import android.os.AsyncTask;
 import android.os.Environment;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -20,7 +21,9 @@ import com.twitter.sdk.android.core.TwitterException;
 import com.twitter.sdk.android.core.TwitterSession;
 import com.twitter.sdk.android.core.identity.TwitterLoginButton;
 import com.twitter.sdk.android.core.models.Media;
+import com.twitter.sdk.android.core.models.Tweet;
 import com.twitter.sdk.android.core.services.MediaService;
+import com.twitter.sdk.android.core.services.StatusesService;
 import com.twitter.sdk.android.tweetcomposer.TweetComposer;
 
 
@@ -51,6 +54,14 @@ public class MainActivity extends Activity {
         TwitterAuthConfig authConfig = new TwitterAuthConfig(TWITTER_KEY, TWITTER_SECRET);
         Fabric.with(this, new Twitter(authConfig));
         setContentView(R.layout.activity_main);
+        File f = null;
+        //try {
+        f = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "home.jpg");
+        Uri myImageUri = Uri.fromFile(f);
+        TweetComposer.Builder builder = new TweetComposer.Builder(this)
+                .text("just setting up my Fabric.")
+                .image(myImageUri);
+        //builder.show();
         loginButton = (TwitterLoginButton) findViewById(R.id.twitter_login_button);
         loginButton.setCallback(new Callback<TwitterSession>() {
             @Override
@@ -82,70 +93,102 @@ public class MainActivity extends Activity {
     }
     private void uploadImage( final String tweettext, TwitterSession twitterSession){
         TweetComposer composer = new TweetComposer();
-        
-        File f = null;
-        //try {
-            f = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "home.jpg");
-            if (!f.exists()) {
-                // f.createNewFile();
-            }
-//id is some like R.drawable.b_image
-            /*InputStream inputStream = getResources().getAssets().open("home.jpg");
-            OutputStream out=new FileOutputStream(f);
-            byte buf[]=new byte[1024];
-            int len;
-            while((len=inputStream.read(buf))>0)
-                out.write(buf,0,len);
-            out.close();
-            inputStream.close();
-        }*/
-        /*}
-        catch (IOException e){
-           e.printStackTrace();
-            Log.e("exc", "ex"+e.getMessage()+ "stack:");
-            Toast.makeText(getApplicationContext(), "Firt io", Toast.LENGTH_LONG).show();
-        } */
 
-    Uri uri = Uri.parse("android.resource://com.share.shareapptwitter/drawable/home.jpg");
-        //File f= new File(uri.getPath());
-        File imagefile =  new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + "home.jpg");
-        /*try{
-            InputStream inputStream = getResources().getAssets().open("myfoldername/myfilename");
-        } catch (IOException e) {
-            e.printStackTrace();
-        } */
+        File f = null;
+
+            f = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "hh.gif");
+
+
+        TwitterSession session = TwitterCore.getInstance()
+                .getSessionManager().getActiveSession();
+
+        TwitterApiClient twitterApiClient = TwitterCore.getInstance().getApiClient(session);
+        MediaService ms = twitterApiClient.getMediaService();
+
+        MediaType type = MediaType.parse("image/*");
+
+        RequestBody body = RequestBody.create(type, f);
+        MediaService mediaservice1 = twitterApiClient.getMediaService();
         //TypedFile typedFile = new TypedFile("image/*", imagefile);
         RequestBody file = RequestBody.create(MediaType.parse("image/*"), f);
-        TwitterApiClient twitterApiClient = TwitterCore.getInstance().getApiClient();
+        //TwitterApiClient twitterApiClient = TwitterCore.getInstance().getApiClient();
         MediaService mediaservice = twitterApiClient.getMediaService();
-        Call<Media> mediaCall=  mediaservice.upload(file, null, null);
-        try {
-           Response<Media> response =  mediaCall.execute();
-            if(response.isSuccessful()){
-                runOnUiThread(new Runnable() {
+        Call<Media> mediaCall=  mediaservice1.upload(file, null, null);
+        mediaCall.enqueue(new Callback<Media>() {
+            @Override
+            public void success(Result<Media> result) {
+               /* runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
                         Toast.makeText(getApplicationContext(), "posted", Toast.LENGTH_LONG).show();
                     }
-                });
+                }); */
+                // getting tweet in string
+                String tweetStr = "tweeting";
 
-            }
-        } catch (IOException e) {
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    Toast.makeText(getApplicationContext(), "not posted io", Toast.LENGTH_LONG).show();
+                // post tweet only if it is not empty
+                if (!TextUtils.isEmpty(tweetStr)) {
+                    // EditText is not empty
+                    // Check if char count is exceeding 140 limit
+                    if (tweetStr.length() > 140) {
+                        //Toast.makeText(PostTweetActivity.this,
+                              //  "You have exceeded the 140 character limit",
+                                //Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    // getting twitter api client and session
+                    StatusesService statusesService =
+                            TwitterCore.getInstance().getApiClient().getStatusesService();
+
+
+                    Call<Tweet> tweetCall= statusesService.update
+                            (       tweetStr,
+                                    null, false,
+                                    null, null, null,
+                                    true, false,
+                                    result.data.mediaIdString
+                            );
+
+                    tweetCall.enqueue(new Callback<Tweet>()
+                    {
+                        @Override
+                        public void success(Result<Tweet> result) {
+                            //dismiss the progress dialog
+                          //  dialog.dismiss();
+                            //close the activity
+                            //finish();
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    Toast.makeText(getApplicationContext(), "posted tweet call", Toast.LENGTH_LONG).show();
+                                }
+                            });
+                        }
+
+                        public void failure(TwitterException exception)
+                        {
+                            //dismiss the progress dialog
+                            //dialog.dismiss();
+                            // showing error to user
+                            //Toast.makeText(PostTweetActivity.this,
+                                   // R.string.error_msg_post_tweet, Toast.LENGTH_SHORT)
+                                   // .show();
+                        }
+                    });
                 }
-            });
+            }
 
-            e.printStackTrace();
-        }
+            @Override
+            public void failure(TwitterException exception) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(getApplicationContext(), "failure", Toast.LENGTH_LONG).show();
+                    }
+                });
+            }
+        });
 
-    }
-    public void makeTweet(){
-        TwitterApiClient twitterApiClient = TwitterCore.getInstance().getApiClient();
-        MediaService mediaService = twitterApiClient.getMediaService();
-        //mediaService.upload()
 
     }
     @Override
