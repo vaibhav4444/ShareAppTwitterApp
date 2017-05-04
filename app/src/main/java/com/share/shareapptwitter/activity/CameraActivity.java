@@ -2,19 +2,55 @@ package com.share.shareapptwitter.activity;
 
 import android.app.Activity;
 import android.content.res.Configuration;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.Matrix;
+import android.graphics.drawable.Drawable;
 import android.hardware.Camera;
+import android.media.MediaPlayer;
+import android.os.Bundle;
+import android.os.Environment;
+import android.util.Log;
 import android.view.SurfaceHolder;
+import android.view.SurfaceView;
+import android.widget.ImageView;
 import android.widget.Toast;
 
+import com.share.shareapptwitter.ConstantValues;
+import com.share.shareapptwitter.R;
+
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 
 /**
  * Created by vaibhav.singhal on 5/3/2017.
+ *
+ * links :
+ * define call back surface methods : http://stackoverflow.com/questions/10482057/android-camera-surface-view/10482872#10482872
+ * define surface , surface view : http://stackoverflow.com/questions/17198520/what-is-surfaceview-surfaceholder-surface-camera-api-android
  */
 
 public class CameraActivity extends Activity  implements SurfaceHolder.Callback {
     private Camera camera = null;
     private boolean previewing = false;
+    // this view will display video captured by camera
+    private SurfaceView mCameraSurfaceView = null;
+    // used to interact with surface view & get various callback regardign changes to surface view.
+    private SurfaceHolder mCameraSurfaceHolder = null;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_camera);
+        mCameraSurfaceView = (SurfaceView) findViewById(R.id.surfaceView);
+        mCameraSurfaceHolder = mCameraSurfaceView.getHolder();
+        mCameraSurfaceHolder.addCallback(this);
+    }
+
     @Override
     public void surfaceCreated(SurfaceHolder surfaceHolder) {
         try {
@@ -43,7 +79,7 @@ public class CameraActivity extends Activity  implements SurfaceHolder.Callback 
             //params.set("rotation", 270);
             params.set("orientation", "portrait");
             camera.setParameters(params);
-            camera.setPreviewDisplay(cameraSurfaceHolder);
+            camera.setPreviewDisplay(mCameraSurfaceHolder);
             camera.startPreview();
             previewing = true;
         } catch (IOException e) {
@@ -61,5 +97,184 @@ public class CameraActivity extends Activity  implements SurfaceHolder.Callback 
         camera = null;
         previewing = false;
 
+    }
+    //code to capture image need to replace it with Async task
+    class CaptureThread extends Thread {
+
+        @Override
+        public void run() {
+            Log.d("Naval", "in click function before capture");
+            // TakeScreenshot();
+            Log.d("Naval", "In run to click- after capture");
+
+            int count = 0;
+            // code to play sound while capturing images
+            //MediaPlayer mp = MediaPlayer.create(getApplicationContext(), R.raw.click);
+            //mp.setLooping(true);
+
+            while (count < ConstantValues.NUMBER_OF_PICS_TO_CAPTURE) {
+                try {
+                    Log.d("Naval", "camera clicked number ->"+count );
+
+                    if(safeToTakePicture) {
+                        Log.d("naval","enter safe - running media");
+                        //mp.start();
+
+
+                        camera.takePicture(cameraShutterCallback,
+                                cameraPictureCallbackRaw,
+                                cameraPictureCallbackJpeg);
+                        safeToTakePicture = false;
+                        count++;
+
+                    }
+                    Thread.sleep(500);
+                } catch (Exception exception) {
+                    exception.printStackTrace();
+                }
+            }
+           // mp.stop();
+            generatePng(globalData);
+            glo = 0; // images will be save from 0 in pics folder
+            try {
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            createGif();
+
+
+        }
+
+        public void generatePng(byte[][] global) {
+
+            MainActivity.this.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    cnt.setImageResource(R.drawable.saving);
+                    cnt.setVisibility(ImageView.VISIBLE);
+
+                }
+            });
+
+
+
+            for (int i = 1; i < 17; i++) {
+                // Matrix matrix = new Matrix();
+                // matrix.postRotate();
+                // createa matrix for the manipulation
+
+
+                Bitmap cameraBitmap = BitmapFactory.decodeByteArray(global[i], 0, global[i].length);
+                int wid = cameraBitmap.getWidth();
+                int hgt = cameraBitmap.getHeight();
+
+                Matrix matrix = new Matrix();
+                // resize the bit map
+                // matrix.postScale(scaleWidth, scaleHeight);
+                // rotate the Bitmap
+                matrix.postRotate(270);
+
+                Bitmap newImage = Bitmap.createBitmap
+                        (cameraBitmap,0,0,wid, hgt, matrix,true);
+
+                Canvas canvas = new Canvas(newImage);
+
+                canvas.drawBitmap(newImage, 0f, 0f, null);
+
+                Drawable drawable = getResources().getDrawable(R.drawable.overlay111);
+                // drawable.
+                //  drawable.setBounds(40, 40, drawable.getIntrinsicWidth() + 40, drawable.getIntrinsicHeight() + 40);
+                drawable.setBounds(0, 0, canvas.getWidth(),canvas.getHeight());
+
+                drawable.draw(canvas);
+
+
+                File mediaStorageDir = new File("/sdcard/", "pics");
+
+                File myImage = new File(mediaStorageDir.getPath() + File.separator + "pic" + glo + ".png");
+                Log.d("naval", "File path :" + myImage);
+                glo++;
+
+                try {
+                    FileOutputStream out = new FileOutputStream(myImage);
+                    newImage.compress(Bitmap.CompressFormat.JPEG, 80, out);
+
+
+                    out.flush();
+                    out.close();
+                } catch (FileNotFoundException e) {
+                    Log.d("In Saving File", e + "");
+                } catch (IOException e) {
+                    Log.d("In Saving File", e + "");
+                }
+            }
+            counter =0;
+            // camera.startPreview();
+
+            //   cnt.setVisibility(ImageView.VISIBLE);
+            //   cnt.setImageResource(R.drawable.thr);
+        }
+
+
+        public void createGif() {
+            // Toast.makeText(getApplicationContext(), "We are done", Toast.LENGTH_SHORT).show();
+            //  cnt.setVisibility(ImageView.VISIBLE);
+            //  cnt.setImageResource(R.drawable.thr);
+
+
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            AnimatedGifEncoder encoder = new AnimatedGifEncoder();
+            BitmapFactory.Options options = new BitmapFactory.Options();
+            options.inSampleSize = 3 ;
+
+            encoder.setDelay(100);
+            encoder.setRepeat(0);
+            encoder.start(bos);
+            for (int i = 0; i < 17; i++) {
+                Bitmap bMap = BitmapFactory.decodeFile("/storage/emulated/0/pics/pic" + i + ".png", options);
+                Log.d("naval", "added image");
+
+                encoder.addFrame(bMap);
+            }
+            encoder.finish();
+
+            writeToFile(bos.toByteArray());
+
+            Thread.interrupted();
+
+
+            try {
+                Log.d("naval - lets sleep", "Turn again to click");
+                Thread.sleep(1000);
+
+                SocketServerThread sc = new SocketServerThread();
+                sc.initialize();
+                sc.start();
+
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+            MainActivity.this.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    // cnt.setImageResource(R.drawable.save);
+                    cnt.setVisibility(ImageView.INVISIBLE);
+
+                }
+            });
+
+        }
+
+        public void writeToFile(byte[] array) {
+            try {
+                String path = Environment.getExternalStorageDirectory() + "/gif/gif.gif";
+                FileOutputStream stream = new FileOutputStream(path);
+                stream.write(array);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
     }
 }
