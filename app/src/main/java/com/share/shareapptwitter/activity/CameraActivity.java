@@ -8,7 +8,6 @@ import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.drawable.Drawable;
 import android.hardware.Camera;
-import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
@@ -17,7 +16,7 @@ import android.view.SurfaceView;
 import android.widget.ImageView;
 import android.widget.Toast;
 
-import com.share.shareapptwitter.ConstantValues;
+import com.share.shareapptwitter.constants.ConstantValues;
 import com.share.shareapptwitter.R;
 
 import java.io.ByteArrayOutputStream;
