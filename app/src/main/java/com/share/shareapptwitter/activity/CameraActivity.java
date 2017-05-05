@@ -18,6 +18,8 @@ import android.widget.Toast;
 
 import com.share.shareapptwitter.constants.ConstantValues;
 import com.share.shareapptwitter.R;
+import com.share.shareapptwitter.gif.AnimatedGifEncoder;
+import com.share.shareapptwitter.utils.LogUtil;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -31,20 +33,35 @@ import java.io.IOException;
  * links :
  * define call back surface methods : http://stackoverflow.com/questions/10482057/android-camera-surface-view/10482872#10482872
  * define surface , surface view : http://stackoverflow.com/questions/17198520/what-is-surfaceview-surfaceholder-surface-camera-api-android
+ *
  */
 
 public class CameraActivity extends Activity  implements SurfaceHolder.Callback {
+    public static  final String TAG = CameraActivity.class.getName();
     private Camera camera = null;
     private boolean previewing = false;
     // this view will display video captured by camera
     private SurfaceView mCameraSurfaceView = null;
     // used to interact with surface view & get various callback regardign changes to surface view.
     private SurfaceHolder mCameraSurfaceHolder = null;
+    // to check whether camera is ready to take pic again
+    private boolean mIsSafeToTakePic = false;
+    private File mMediaStorageDir;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_camera);
+        mMediaStorageDir = new File(ConstantValues.folderPathToSaveCapturedImages);
+        if(!mMediaStorageDir.exists()){
+           boolean isSuccess = mMediaStorageDir.mkdir();
+            if(isSuccess){
+                LogUtil.i(TAG, "Folder created");
+            }
+            else{
+                Toast.makeText(this, "Failed to create folder for storing pics", Toast.LENGTH_LONG).show();
+            }
+        }
         mCameraSurfaceView = (SurfaceView) findViewById(R.id.surfaceView);
         mCameraSurfaceHolder = mCameraSurfaceView.getHolder();
         mCameraSurfaceHolder.addCallback(this);
@@ -58,7 +75,13 @@ public class CameraActivity extends Activity  implements SurfaceHolder.Callback 
 
             // camera.setDisplayOrientation(90);
         } catch (RuntimeException e) {
-            Toast.makeText(getApplicationContext(), "Device camera  is not working properly, please try after sometime.", Toast.LENGTH_LONG).show();
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Toast.makeText(getApplicationContext(), "Device camera  is not working properly, please try after sometime.", Toast.LENGTH_LONG).show();
+                }
+            });
+
         }
 
     }
@@ -87,6 +110,37 @@ public class CameraActivity extends Activity  implements SurfaceHolder.Callback 
         }
 
     }
+    Camera.ShutterCallback cameraShutterCallback = new Camera.ShutterCallback()
+    {
+        @Override
+        public void onShutter()
+        {
+            // TODO Auto-generated method stub
+        }
+    };
+
+    Camera.PictureCallback cameraPictureCallbackRaw = new Camera.PictureCallback()
+    {
+        @Override
+        public void onPictureTaken(byte[] data, Camera camera)
+        {
+            // TODO Auto-generated method stub
+        }
+    };
+
+    Camera.PictureCallback cameraPictureCallbackJpeg = new Camera.PictureCallback() {
+        @Override
+        public void onPictureTaken(byte[] data, Camera camera) {
+
+            globalData[counter] = data;
+            counter++;
+            camera.startPreview();
+            mIsSafeToTakePic =true;
+
+
+        }
+    };
+
 
     @Override
     public void surfaceDestroyed(SurfaceHolder surfaceHolder) {
@@ -102,9 +156,9 @@ public class CameraActivity extends Activity  implements SurfaceHolder.Callback 
 
         @Override
         public void run() {
-            Log.d("Naval", "in click function before capture");
+            LogUtil.d(TAG, "run()");
             // TakeScreenshot();
-            Log.d("Naval", "In run to click- after capture");
+            Log.d(TAG, "In run to click- after capture");
 
             int count = 0;
             // code to play sound while capturing images
@@ -113,17 +167,17 @@ public class CameraActivity extends Activity  implements SurfaceHolder.Callback 
 
             while (count < ConstantValues.NUMBER_OF_PICS_TO_CAPTURE) {
                 try {
-                    Log.d("Naval", "camera clicked number ->"+count );
+                    Log.d(TAG, "camera clicked number ->"+count );
 
-                    if(safeToTakePicture) {
-                        Log.d("naval","enter safe - running media");
+                    if(mIsSafeToTakePic) {
+                        Log.d(TAG,"enter safe - running media");
                         //mp.start();
 
 
                         camera.takePicture(cameraShutterCallback,
                                 cameraPictureCallbackRaw,
                                 cameraPictureCallbackJpeg);
-                        safeToTakePicture = false;
+                        mIsSafeToTakePic = false;
                         count++;
 
                     }
@@ -145,17 +199,6 @@ public class CameraActivity extends Activity  implements SurfaceHolder.Callback 
         }
 
         public void generatePng(byte[][] global) {
-
-            MainActivity.this.runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    cnt.setImageResource(R.drawable.saving);
-                    cnt.setVisibility(ImageView.VISIBLE);
-
-                }
-            });
-
-
 
             for (int i = 1; i < 17; i++) {
                 // Matrix matrix = new Matrix();
@@ -188,9 +231,9 @@ public class CameraActivity extends Activity  implements SurfaceHolder.Callback 
                 drawable.draw(canvas);
 
 
-                File mediaStorageDir = new File("/sdcard/", "pics");
 
-                File myImage = new File(mediaStorageDir.getPath() + File.separator + "pic" + glo + ".png");
+
+                File myImage = new File(mMediaStorageDir.getPath() + File.separator + "pic" + glo + ".png");
                 Log.d("naval", "File path :" + myImage);
                 glo++;
 
