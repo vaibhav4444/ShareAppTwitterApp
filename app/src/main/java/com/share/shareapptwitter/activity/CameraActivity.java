@@ -13,6 +13,8 @@ import android.os.Environment;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.Toast;
 
@@ -36,7 +38,7 @@ import java.io.IOException;
  *
  */
 
-public class CameraActivity extends Activity  implements SurfaceHolder.Callback {
+public class CameraActivity extends BaseActivity  implements SurfaceHolder.Callback {
     public static  final String TAG = CameraActivity.class.getName();
     private Camera camera = null;
     private boolean previewing = false;
@@ -45,23 +47,28 @@ public class CameraActivity extends Activity  implements SurfaceHolder.Callback 
     // used to interact with surface view & get various callback regardign changes to surface view.
     private SurfaceHolder mCameraSurfaceHolder = null;
     // to check whether camera is ready to take pic again
-    private boolean mIsSafeToTakePic = false;
-    private File mMediaStorageDir;
+    private boolean mIsSafeToTakePic = true;
+
+    public byte[][] globalData  = new byte[1000][];
+    public int counter = 0;
+    public int glo = 0;
+    private Button btnCapture;
+    private CameraActivity mContext;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_camera);
-        mMediaStorageDir = new File(ConstantValues.folderPathToSaveCapturedImages);
-        if(!mMediaStorageDir.exists()){
-           boolean isSuccess = mMediaStorageDir.mkdir();
-            if(isSuccess){
-                LogUtil.i(TAG, "Folder created");
+        btnCapture = (Button) findViewById(R.id.btnIdCapture);
+        mContext = this;
+        btnCapture.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                CaptureThread captureThread = new CaptureThread();
+                captureThread.start();
             }
-            else{
-                Toast.makeText(this, "Failed to create folder for storing pics", Toast.LENGTH_LONG).show();
-            }
-        }
+        });
+
         mCameraSurfaceView = (SurfaceView) findViewById(R.id.surfaceView);
         mCameraSurfaceHolder = mCameraSurfaceView.getHolder();
         mCameraSurfaceHolder.addCallback(this);
@@ -179,6 +186,13 @@ public class CameraActivity extends Activity  implements SurfaceHolder.Callback 
                                 cameraPictureCallbackJpeg);
                         mIsSafeToTakePic = false;
                         count++;
+                        final int finalCount = count;
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                Toast.makeText(mContext, "Image clicked:"+finalCount, Toast.LENGTH_LONG).show();
+                            }
+                        });
 
                     }
                     Thread.sleep(500);
@@ -200,7 +214,7 @@ public class CameraActivity extends Activity  implements SurfaceHolder.Callback 
 
         public void generatePng(byte[][] global) {
 
-            for (int i = 1; i < 17; i++) {
+            for (int i = 0; i < ConstantValues.NUMBER_OF_PICS_TO_CAPTURE; i++) {
                 // Matrix matrix = new Matrix();
                 // matrix.postRotate();
                 // createa matrix for the manipulation
@@ -223,17 +237,17 @@ public class CameraActivity extends Activity  implements SurfaceHolder.Callback 
 
                 canvas.drawBitmap(newImage, 0f, 0f, null);
 
-                Drawable drawable = getResources().getDrawable(R.drawable.overlay111);
+                //Drawable drawable = getResources().getDrawable(R.drawable.overlay111);
                 // drawable.
                 //  drawable.setBounds(40, 40, drawable.getIntrinsicWidth() + 40, drawable.getIntrinsicHeight() + 40);
-                drawable.setBounds(0, 0, canvas.getWidth(),canvas.getHeight());
+               // drawable.setBounds(0, 0, canvas.getWidth(),canvas.getHeight());
 
-                drawable.draw(canvas);
-
-
+                //drawable.draw(canvas);
 
 
-                File myImage = new File(mMediaStorageDir.getPath() + File.separator + "pic" + glo + ".png");
+
+
+                File myImage = new File(ConstantValues.folderPathToSaveCapturedImages + File.separator + glo + ".png");
                 Log.d("naval", "File path :" + myImage);
                 glo++;
 
@@ -262,7 +276,12 @@ public class CameraActivity extends Activity  implements SurfaceHolder.Callback 
             // Toast.makeText(getApplicationContext(), "We are done", Toast.LENGTH_SHORT).show();
             //  cnt.setVisibility(ImageView.VISIBLE);
             //  cnt.setImageResource(R.drawable.thr);
-
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Toast.makeText(mContext, "creating gif", Toast.LENGTH_LONG).show();
+                }
+            });
 
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             AnimatedGifEncoder encoder = new AnimatedGifEncoder();
@@ -272,8 +291,8 @@ public class CameraActivity extends Activity  implements SurfaceHolder.Callback 
             encoder.setDelay(100);
             encoder.setRepeat(0);
             encoder.start(bos);
-            for (int i = 0; i < 17; i++) {
-                Bitmap bMap = BitmapFactory.decodeFile("/storage/emulated/0/pics/pic" + i + ".png", options);
+            for (int i = 0; i < ConstantValues.NUMBER_OF_PICS_TO_CAPTURE; i++) {
+                Bitmap bMap = BitmapFactory.decodeFile(ConstantValues.folderPathToSaveCapturedImages + File.separator + i + ".png", options);
                 Log.d("naval", "added image");
 
                 encoder.addFrame(bMap);
@@ -281,11 +300,18 @@ public class CameraActivity extends Activity  implements SurfaceHolder.Callback 
             encoder.finish();
 
             writeToFile(bos.toByteArray());
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    Toast.makeText(mContext, "gif created", Toast.LENGTH_LONG).show();
+                }
+            });
+
 
             Thread.interrupted();
 
 
-            try {
+            /*try {
                 Log.d("naval - lets sleep", "Turn again to click");
                 Thread.sleep(1000);
 
@@ -305,14 +331,15 @@ public class CameraActivity extends Activity  implements SurfaceHolder.Callback 
                     cnt.setVisibility(ImageView.INVISIBLE);
 
                 }
-            });
+            }); */
 
         }
 
         public void writeToFile(byte[] array) {
             try {
-                String path = Environment.getExternalStorageDirectory() + "/gif/gif.gif";
-                FileOutputStream stream = new FileOutputStream(path);
+                //String path = Environment.getExternalStorageDirectory() + "/gif/gif.gif";
+                String pathToStoreGif = ConstantValues.folderPathToSaveGIF + File.separator + "gif.gif";
+                FileOutputStream stream = new FileOutputStream(pathToStoreGif);
                 stream.write(array);
             } catch (Exception e) {
                 e.printStackTrace();

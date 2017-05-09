@@ -6,9 +6,6 @@ import android.content.pm.PackageManager;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
-
-import com.indesign.viewer.indesignviewer.common.app.ViewerApplication;
-import com.indesign.viewer.indesignviewer.common.constants.Constants;
 import com.share.shareapptwitter.common.ShareApplication;
 import com.share.shareapptwitter.constants.ConstantValues;
 

@@ -9,8 +9,9 @@ import java.io.File;
  */
 
 public class ConstantValues {
-    public static final int NUMBER_OF_PICS_TO_CAPTURE = 10;
+    public static final int NUMBER_OF_PICS_TO_CAPTURE = 4;
     public static final int PERMISSION_REQUEST_CODE = 1009;
     public static final String IS_READ_PERMISSION_GRANTED = "isReadPermissionGranted";
     public static final String folderPathToSaveCapturedImages = Environment.getExternalStorageDirectory().getAbsolutePath()+ File.separator+"tweetPics";
+    public static final String folderPathToSaveGIF = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "gif";
 }

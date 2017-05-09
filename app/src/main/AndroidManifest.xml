@@ -15,7 +15,7 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
 
-        <activity android:name=".activity.PermissionActivity">
+        <activity android:name=".activity.CameraActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
