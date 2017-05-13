@@ -1,33 +1,34 @@
 package com.share.shareapptwitter.activity;
 
-import android.app.Activity;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
-import android.graphics.drawable.Drawable;
 import android.hardware.Camera;
 import android.os.Bundle;
-import android.os.Environment;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.widget.Button;
-import android.widget.ImageView;
 import android.widget.Toast;
 
 import com.share.shareapptwitter.constants.ConstantValues;
 import com.share.shareapptwitter.R;
 import com.share.shareapptwitter.gif.AnimatedGifEncoder;
+import com.share.shareapptwitter.utils.FunctionUtils;
 import com.share.shareapptwitter.utils.LogUtil;
+import com.twitter.sdk.android.Twitter;
+import com.twitter.sdk.android.core.TwitterAuthConfig;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+
+import io.fabric.sdk.android.Fabric;
 
 /**
  * Created by vaibhav.singhal on 5/3/2017.
@@ -42,6 +43,7 @@ public class CameraActivity extends BaseActivity  implements SurfaceHolder.Callb
     public static  final String TAG = CameraActivity.class.getName();
     private Camera camera = null;
     private boolean previewing = false;
+
     // this view will display video captured by camera
     private SurfaceView mCameraSurfaceView = null;
     // used to interact with surface view & get various callback regardign changes to surface view.
@@ -57,8 +59,12 @@ public class CameraActivity extends BaseActivity  implements SurfaceHolder.Callb
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_camera);
+        initialiseTwitterButton();
+
+
         btnCapture = (Button) findViewById(R.id.btnIdCapture);
         mContext = this;
         btnCapture.setOnClickListener(new View.OnClickListener() {
@@ -78,16 +84,18 @@ public class CameraActivity extends BaseActivity  implements SurfaceHolder.Callb
     public void surfaceCreated(SurfaceHolder surfaceHolder) {
         try {
             // camera = Camera.open(findFrontFacingCamera());
-            camera = Camera.open();
+            int cameraId = FunctionUtils.getFrontCamId();
+            if(cameraId != -1){
+                camera = Camera.open(cameraId);
+            }
+            else {
+                FunctionUtils.showToast("Front camera not available. Opening back camera", CameraActivity.this);
+                camera = Camera.open();
+            }
 
             // camera.setDisplayOrientation(90);
         } catch (RuntimeException e) {
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    Toast.makeText(getApplicationContext(), "Device camera  is not working properly, please try after sometime.", Toast.LENGTH_LONG).show();
-                }
-            });
+            FunctionUtils.showToast("Device camera  is not working properly, please try after sometime.", CameraActivity.this);
 
         }
 
@@ -338,7 +346,7 @@ public class CameraActivity extends BaseActivity  implements SurfaceHolder.Callb
         public void writeToFile(byte[] array) {
             try {
                 //String path = Environment.getExternalStorageDirectory() + "/gif/gif.gif";
-                String pathToStoreGif = ConstantValues.folderPathToSaveGIF + File.separator + "gif.gif";
+
                 FileOutputStream stream = new FileOutputStream(pathToStoreGif);
                 stream.write(array);
             } catch (Exception e) {

@@ -62,7 +62,7 @@ public class PermissionActivity extends Activity {
         }
     }
     public void launchMainActivity(boolean isPermissionGranted){
-        Intent intent = new Intent(this, MainActivity.class);
+        Intent intent = new Intent(this, CameraActivity.class);
         intent.putExtra(ConstantValues.IS_READ_PERMISSION_GRANTED, isPermissionGranted);
         startActivity(intent);
         PermissionActivity.this.finish();

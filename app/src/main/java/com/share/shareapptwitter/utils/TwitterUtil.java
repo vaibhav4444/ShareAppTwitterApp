@@ -1,79 +1,41 @@
-package com.share.shareapptwitter.activity;
+package com.share.shareapptwitter.utils;
 
 import android.app.Activity;
-import android.content.Intent;
-import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Environment;
-import android.os.Bundle;
 import android.text.TextUtils;
-import android.util.Log;
 import android.widget.Toast;
 
-import com.share.shareapptwitter.R;
-import com.twitter.sdk.android.Twitter;
 import com.twitter.sdk.android.core.Callback;
 import com.twitter.sdk.android.core.Result;
 import com.twitter.sdk.android.core.TwitterApiClient;
-import com.twitter.sdk.android.core.TwitterAuthConfig;
 import com.twitter.sdk.android.core.TwitterCore;
 import com.twitter.sdk.android.core.TwitterException;
 import com.twitter.sdk.android.core.TwitterSession;
-import com.twitter.sdk.android.core.identity.TwitterLoginButton;
 import com.twitter.sdk.android.core.models.Media;
 import com.twitter.sdk.android.core.models.Tweet;
 import com.twitter.sdk.android.core.services.MediaService;
 import com.twitter.sdk.android.core.services.StatusesService;
-import com.twitter.sdk.android.tweetcomposer.TweetComposer;
-
 
 import java.io.File;
 
-import io.fabric.sdk.android.Fabric;
 import okhttp3.MediaType;
 import okhttp3.RequestBody;
 import retrofit2.Call;
 
-public class MainActivity extends Activity {
+/**
+ * Created by vaibhavsinghal on 13/05/17.
+ */
 
-    // Note: Your consumer key and secret should be obfuscated in your source code before shipping.
-    private static final String TWITTER_KEY = "S3PN2l06fLywzEAY4xvq4KEci";
-    private static final String TWITTER_SECRET = "W0e1auhRqJukaxSfZbWFxcCEIQpediGyOjnCeX7PdqmuiU4vlp";
-    private TwitterLoginButton loginButton;
-    TwitterSession session;
-
-
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-
-        setContentView(R.layout.activity_main);
-        File f = null;
-        //try {
-        f = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "home.jpg");
-        Uri myImageUri = Uri.fromFile(f);
-        TweetComposer.Builder builder = new TweetComposer.Builder(this)
-                .text("just setting up my Fabric.")
-                .image(myImageUri);
-        //builder.show();
-        loginButton = (TwitterLoginButton) findViewById(R.id.twitter_login_button);
-        loginButton.setCallback(new Callback<TwitterSession>() {
-            @Override
-            public void success(Result<TwitterSession> result) {
-                // The TwitterSession is also available through:
-                // Twitter.getInstance().core.getSessionManager().getActiveSession()
-                 session = result.data;
-                new TwitterTweetTask().execute();
-
-            }
-            @Override
-            public void failure(TwitterException exception) {
-               showToast("Failed to login into twitter account");
-            }
-        });
-
+public class TwitterUtil {
+    private Activity mContext;
+    public TwitterUtil (Activity context){
+        mContext = context;
     }
-    class TwitterTweetTask extends AsyncTask<Void, Void, Void>{
+    public void executeTweetTask(){
+        new TwitterTweetTask().execute();
+    }
+    class TwitterTweetTask extends AsyncTask<Void, Void, Void> {
 
         @Override
         protected Void doInBackground(Void... voids) {
@@ -81,7 +43,6 @@ public class MainActivity extends Activity {
             return null;
         }
     }
-
     /**
      * This method will upload image.
      * File object will represent file to upload
@@ -94,7 +55,7 @@ public class MainActivity extends Activity {
                 .getSessionManager().getActiveSession();
         // create twitter client from active session
         TwitterApiClient twitterApiClient = TwitterCore.getInstance().getApiClient(session);
-       // get media service object.
+        // get media service object.
         MediaService mediaservice = twitterApiClient.getMediaService();
         // type of file to upload and file object
         RequestBody file = RequestBody.create(MediaType.parse("image/*"), fileObjectForGIF);
@@ -129,12 +90,12 @@ public class MainActivity extends Activity {
                     {
                         @Override
                         public void success(Result<Tweet> result) {
-                            showToast("Successfully tweeted.");
+                            FunctionUtils.showToast("Successfully tweeted.", mContext);
                         }
                         @Override
                         public void failure(TwitterException exception)
                         {
-                            showToast("Failed to tweet.");
+                            FunctionUtils.showToast("Failed to tweet.", mContext);
                         }
                     });
                 }
@@ -142,31 +103,10 @@ public class MainActivity extends Activity {
 
             @Override
             public void failure(TwitterException exception) {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Toast.makeText(getApplicationContext(), "failure", Toast.LENGTH_LONG).show();
-                    }
-                });
+                FunctionUtils.showToast("Get media id call failed", mContext);
             }
         });
 
 
     }
-    private void showToast(final String message){
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                Toast.makeText(getApplicationContext(), message, Toast.LENGTH_LONG).show();
-            }
-        });
-    }
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        // Make sure that the loginButton hears the result from any
-        // Activity that it triggered.
-        loginButton.onActivityResult(requestCode, resultCode, data);
-    }
-
 }

@@ -15,13 +15,14 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
 
-        <activity android:name=".activity.CameraActivity">
+        <activity android:name=".activity.PermissionActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity android:name=".activity.CameraActivity"/>
         <meta-data
             android:name="io.fabric.ApiKey"
             android:value="a80bd3218bf78b22c63def4102fe8fac97085793" />
