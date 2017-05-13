@@ -3,6 +3,10 @@ package com.share.shareapptwitter.common;
 import android.app.Application;
 import android.os.Build;
 
+import com.crashlytics.android.Crashlytics;
+
+import io.fabric.sdk.android.Fabric;
+
 /**
  * Created by vaibhav.singhal on 5/5/2017.
  */
@@ -12,6 +16,7 @@ public class ShareApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
+        Fabric.with(this, new Crashlytics());
         mInstance = this;
     }
 

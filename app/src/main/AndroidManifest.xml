@@ -25,8 +25,9 @@
         <activity android:name=".activity.CameraActivity"/>
         <meta-data
             android:name="io.fabric.ApiKey"
-            android:value="a80bd3218bf78b22c63def4102fe8fac97085793" />
+            android:value="d9636290707162d26bb8ff6913bed269e9f99cbe"
+            />
     </application>
 
-    <uses-permission android:name="android.permission.INTERNET" />
+
 </manifest>
