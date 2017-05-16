@@ -34,8 +34,7 @@ public class BaseActivity extends Activity {
     protected String pathToStoreGif = ConstantValues.folderPathToSaveGIF + File.separator + "gif.gif";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        TwitterAuthConfig authConfig = new TwitterAuthConfig(ConstantValues.TWITTER_KEY, ConstantValues.TWITTER_SECRET);
-        Fabric.with(this, new Twitter(authConfig));
+
         super.onCreate(savedInstanceState);
         mMediaStorageDir = new File(ConstantValues.folderPathToSaveCapturedImages);
         mGifStorage = new File(ConstantValues.folderPathToSaveGIF);

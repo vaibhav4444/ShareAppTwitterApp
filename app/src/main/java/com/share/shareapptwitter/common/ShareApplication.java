@@ -4,6 +4,9 @@ import android.app.Application;
 import android.os.Build;
 
 import com.crashlytics.android.Crashlytics;
+import com.share.shareapptwitter.constants.ConstantValues;
+import com.twitter.sdk.android.Twitter;
+import com.twitter.sdk.android.core.TwitterAuthConfig;
 
 import io.fabric.sdk.android.Fabric;
 
@@ -16,6 +19,8 @@ public class ShareApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
+        TwitterAuthConfig authConfig = new TwitterAuthConfig(ConstantValues.TWITTER_KEY, ConstantValues.TWITTER_SECRET);
+        Fabric.with(this, new Twitter(authConfig));
         Fabric.with(this, new Crashlytics());
         mInstance = this;
     }

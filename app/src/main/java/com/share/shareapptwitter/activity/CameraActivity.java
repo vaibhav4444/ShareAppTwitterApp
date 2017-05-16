@@ -1,10 +1,12 @@
 package com.share.shareapptwitter.activity;
 
+import android.app.ProgressDialog;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
+import android.graphics.drawable.Drawable;
 import android.hardware.Camera;
 import android.os.Bundle;
 import android.util.Log;
@@ -51,11 +53,12 @@ public class CameraActivity extends BaseActivity  implements SurfaceHolder.Callb
     // to check whether camera is ready to take pic again
     private boolean mIsSafeToTakePic = true;
 
-    public byte[][] globalData  = new byte[1000][];
+    public byte[][] globalData  = new byte[ConstantValues.NUMBER_OF_PICS_TO_CAPTURE][];
     public int counter = 0;
     public int glo = 0;
     private Button btnCapture;
     private CameraActivity mContext;
+    private ProgressDialog mProgressDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,7 +67,8 @@ public class CameraActivity extends BaseActivity  implements SurfaceHolder.Callb
         setContentView(R.layout.activity_camera);
         initialiseTwitterButton();
 
-
+        mProgressDialog = new ProgressDialog(this);
+        mProgressDialog.setMessage("Creating GIF. Please wait...");
         btnCapture = (Button) findViewById(R.id.btnIdCapture);
         mContext = this;
         btnCapture.setOnClickListener(new View.OnClickListener() {
@@ -245,19 +249,19 @@ public class CameraActivity extends BaseActivity  implements SurfaceHolder.Callb
 
                 canvas.drawBitmap(newImage, 0f, 0f, null);
 
-                //Drawable drawable = getResources().getDrawable(R.drawable.overlay111);
+                Drawable drawable = getResources().getDrawable(R.drawable.overlay111);
                 // drawable.
                 //  drawable.setBounds(40, 40, drawable.getIntrinsicWidth() + 40, drawable.getIntrinsicHeight() + 40);
-               // drawable.setBounds(0, 0, canvas.getWidth(),canvas.getHeight());
+               drawable.setBounds(0, 0, canvas.getWidth(),canvas.getHeight());
 
-                //drawable.draw(canvas);
-
-
+                drawable.draw(canvas);
 
 
-                File myImage = new File(ConstantValues.folderPathToSaveCapturedImages + File.separator + glo + ".png");
+
+
+                File myImage = new File(ConstantValues.folderPathToSaveCapturedImages + File.separator + i + ".png");
                 Log.d("naval", "File path :" + myImage);
-                glo++;
+                //glo++;
 
                 try {
                     FileOutputStream out = new FileOutputStream(myImage);
@@ -287,7 +291,8 @@ public class CameraActivity extends BaseActivity  implements SurfaceHolder.Callb
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    Toast.makeText(mContext, "creating gif", Toast.LENGTH_LONG).show();
+                    //Toast.makeText(mContext, "creating gif", Toast.LENGTH_LONG).show();
+                    mProgressDialog.show();
                 }
             });
 
@@ -311,7 +316,8 @@ public class CameraActivity extends BaseActivity  implements SurfaceHolder.Callb
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    Toast.makeText(mContext, "gif created", Toast.LENGTH_LONG).show();
+                   // Toast.makeText(mContext, "gif created", Toast.LENGTH_LONG).show();
+                    mProgressDialog.hide();
                 }
             });
 
